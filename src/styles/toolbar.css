@@ -1,28 +1,40 @@
 /* Top Toolbar Styling */
 .top-toolbar {
-  height: 56px;
+  height: calc(var(--toolbar-height) + var(--safe-top));
+  padding-top: var(--safe-top);
+  padding-left: max(12px, var(--safe-left));
+  padding-right: max(12px, var(--safe-right));
   background-color: var(--bg-surface);
   border-bottom: 1px solid var(--border-color);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 16px;
+  gap: 8px;
   z-index: 40;
   box-shadow: var(--shadow-sm);
   user-select: none;
+  flex-shrink: 0;
+  width: 100%;
 }
 
 .toolbar-group {
   display: flex;
   align-items: center;
   gap: 6px;
+  flex-shrink: 0;
+}
+
+.toolbar-group.flexible {
+  flex-shrink: 1;
+  min-width: 0;
 }
 
 .brand-section {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin-right: 12px;
+  gap: 8px;
+  margin-right: 4px;
+  flex-shrink: 0;
 }
 
 .brand-icon {
@@ -35,6 +47,7 @@
   align-items: center;
   justify-content: center;
   box-shadow: 0 2px 4px rgba(37, 99, 235, 0.25);
+  flex-shrink: 0;
 }
 
 .brand-title {
@@ -42,6 +55,7 @@
   font-size: 1.05rem;
   color: var(--text-primary);
   letter-spacing: -0.02em;
+  white-space: nowrap;
 }
 
 .brand-badge {
@@ -53,6 +67,7 @@
   border-radius: 999px;
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  white-space: nowrap;
 }
 
 .filename-input-container {
@@ -64,6 +79,8 @@
   padding: 4px 8px;
   transition: all 0.15s ease;
   max-width: 220px;
+  min-width: 60px;
+  flex: 1;
 }
 
 .filename-input-container:focus-within {
@@ -86,9 +103,10 @@
 
 .toolbar-divider {
   width: 1px;
-  height: 24px;
+  height: 22px;
   background-color: var(--border-color);
-  margin: 0 6px;
+  margin: 0 4px;
+  flex-shrink: 0;
 }
 
 .toolbar-btn {
@@ -97,6 +115,7 @@
   justify-content: center;
   gap: 6px;
   height: 34px;
+  min-width: 34px;
   padding: 0 10px;
   border-radius: var(--radius-sm);
   font-size: 0.82rem;
@@ -104,6 +123,8 @@
   color: var(--text-secondary);
   transition: all 0.15s ease;
   position: relative;
+  white-space: nowrap;
+  touch-action: manipulation;
 }
 
 .toolbar-btn:hover:not(:disabled) {
@@ -116,7 +137,7 @@
 }
 
 .toolbar-btn:disabled {
-  opacity: 0.4;
+  opacity: 0.35;
   cursor: not-allowed;
 }
 
@@ -143,6 +164,18 @@
   box-shadow: 0 2px 6px rgba(37, 99, 235, 0.4);
 }
 
+/* Badge dot on properties toggle button */
+.selection-dot {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background-color: var(--accent-blue);
+  border: 1.5px solid #ffffff;
+}
+
 .zoom-dropdown {
   background-color: #f8fafc;
   border: 1px solid var(--border-color);
@@ -152,6 +185,7 @@
   color: var(--text-primary);
   padding: 5px 8px;
   cursor: pointer;
+  height: 34px;
 }
 
 .page-nav-box {
@@ -160,10 +194,11 @@
   gap: 4px;
   font-size: 0.82rem;
   color: var(--text-secondary);
+  white-space: nowrap;
 }
 
 .page-number-input {
-  width: 38px;
+  width: 36px;
   text-align: center;
   font-size: 0.82rem;
   font-weight: 600;
@@ -177,8 +212,143 @@
   border-color: var(--border-focus);
 }
 
-/* Tooltip helper */
-.tooltip-wrap {
-  position: relative;
-  display: inline-flex;
+/* Responsive Show/Hide Classes */
+.mobile-sidebar-toggle {
+  display: none;
+}
+
+.properties-toggle-btn {
+  display: none;
+}
+
+/* More Menu Dropdown */
+.toolbar-dropdown-menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 6px);
+  width: 230px;
+  max-width: calc(100vw - 24px);
+  background-color: #ffffff;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xl);
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  z-index: 70;
+  animation: modalPop 0.12s ease-out;
+}
+
+.dropdown-section-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 6px 8px 2px 8px;
+}
+
+.dropdown-divider {
+  height: 1px;
+  background-color: var(--border-color);
+  margin: 4px 0;
+}
+
+/* RESPONSIVE BREAKPOINTS */
+
+/* Tablet & Smaller Screens (< 1024px) */
+@media (max-width: 1023px) {
+  .top-toolbar {
+    padding-left: max(8px, var(--safe-left));
+    padding-right: max(8px, var(--safe-right));
+    gap: 6px;
+  }
+
+  .mobile-sidebar-toggle {
+    display: inline-flex;
+  }
+
+  .properties-toggle-btn {
+    display: inline-flex;
+  }
+
+  .filename-input-container {
+    max-width: 150px;
+  }
+
+  .hide-tablet {
+    display: none !important;
+  }
+}
+
+/* Mobile Screens (< 768px) */
+@media (max-width: 767px) {
+  .top-toolbar {
+    height: calc(50px + var(--safe-top));
+    gap: 4px;
+    padding-left: max(6px, var(--safe-left));
+    padding-right: max(6px, var(--safe-right));
+  }
+
+  .brand-title {
+    display: none;
+  }
+
+  .brand-section {
+    margin-right: 0;
+    gap: 4px;
+  }
+
+  .filename-input-container {
+    max-width: 110px;
+    padding: 3px 6px;
+  }
+
+  .filename-input {
+    font-size: 0.78rem;
+  }
+
+  .toolbar-center-tools {
+    display: none !important;
+  }
+
+  .toolbar-divider.desktop-divider {
+    display: none !important;
+  }
+
+  .toolbar-btn.primary span {
+    display: none;
+  }
+
+  .toolbar-btn.primary {
+    padding: 0;
+    width: 34px;
+  }
+
+  .hide-mobile {
+    display: none !important;
+  }
+
+  .toolbar-btn {
+    height: 32px;
+    min-width: 32px;
+    padding: 0 6px;
+  }
+
+  .toolbar-btn.icon-only {
+    width: 32px;
+    height: 32px;
+  }
+}
+
+/* Very Small Mobile (< 380px) */
+@media (max-width: 379px) {
+  .filename-input-container {
+    max-width: 80px;
+  }
+
+  .toolbar-group {
+    gap: 3px;
+  }
 }

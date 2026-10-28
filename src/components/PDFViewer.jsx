@@ -1,7 +1,7 @@
 import React, { useRef, useEffect } from 'react';
 import PDFPage from './PDFPage';
 
-export default function PDFViewer({
+const PDFViewer = React.forwardRef(function PDFViewer({
   pdfDocProxy,
   pages,
   activePageIndex,
@@ -20,8 +20,9 @@ export default function PDFViewer({
   pageLinks,
   onUpdatePageEdits,
   onUpdatePageLinks,
-}) {
-  const workspaceRef = useRef(null);
+}, ref) {
+  const localRef = useRef(null);
+  const workspaceRef = ref || localRef;
 
   // Scroll active page into view when activePageIndex changes from thumbnails or navigation
   useEffect(() => {
@@ -92,4 +93,6 @@ export default function PDFViewer({
       ))}
     </main>
   );
-}
+});
+
+export default PDFViewer;

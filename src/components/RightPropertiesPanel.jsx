@@ -15,9 +15,38 @@ import {
   Square,
   Sliders,
   RotateCw,
+  X,
 } from 'lucide-react';
 import { AVAILABLE_FONTS, FONT_SIZES } from '../utils/fontUtils';
 import { isValidUrl, normalizeUrl } from '../services/pdfLinkManager';
+
+function PanelContainer({ title, isOpen, onClose, children }) {
+  return (
+    <>
+      {isOpen && onClose && (
+        <div className="drawer-backdrop properties-backdrop" onClick={onClose} />
+      )}
+      <aside className={`properties-panel ${isOpen ? 'panel-open' : ''}`}>
+        <div className="properties-header">
+          <span className="properties-title">{title}</span>
+          {onClose && (
+            <button
+              type="button"
+              className="properties-close-btn"
+              onClick={onClose}
+              title="Close Properties"
+            >
+              <X size={16} />
+            </button>
+          )}
+        </div>
+        <div className="properties-body">
+          {children}
+        </div>
+      </aside>
+    </>
+  );
+}
 
 export default function RightPropertiesPanel({
   selectedObject,
@@ -33,16 +62,13 @@ export default function RightPropertiesPanel({
   onAddTextBox,
   onAddShape,
   onAddLink,
+  isOpen = false,
+  onClose,
 }) {
   // If an existing text item is selected for editing
   if (selectedTextItem) {
     return (
-      <aside className="properties-panel">
-        <div className="properties-header">
-          <span className="properties-title">Edit Existing Text</span>
-        </div>
-
-        <div className="properties-body">
+      <PanelContainer title="Edit Existing Text" isOpen={isOpen} onClose={onClose}>
           <div className="prop-section">
             <span className="prop-section-title">Original Text</span>
             <div
@@ -132,22 +158,16 @@ export default function RightPropertiesPanel({
               <span>Revert to Original Text</span>
             </button>
           </div>
-        </div>
-      </aside>
-    );
-  }
+        </PanelContainer>
+      );
+    }
 
   // If a Hyperlink is selected
   if (selectedLink) {
     const valid = isValidUrl(selectedLink.url);
 
     return (
-      <aside className="properties-panel">
-        <div className="properties-header">
-          <span className="properties-title">Link Properties</span>
-        </div>
-
-        <div className="properties-body">
+      <PanelContainer title="Link Properties" isOpen={isOpen} onClose={onClose}>
           <div className="prop-section">
             <span className="prop-section-title">Target Destination URL</span>
             <input
@@ -203,10 +223,9 @@ export default function RightPropertiesPanel({
               <span>Delete Hyperlink</span>
             </button>
           </div>
-        </div>
-      </aside>
-    );
-  }
+        </PanelContainer>
+      );
+    }
 
   // If a Fabric Object is selected (Text, Shape, Image)
   if (selectedObject) {
@@ -220,14 +239,11 @@ export default function RightPropertiesPanel({
     const isImage = selectedObject.type === 'image';
 
     return (
-      <aside className="properties-panel">
-        <div className="properties-header">
-          <span className="properties-title">
-            {isText ? 'Text Properties' : isShape ? 'Shape Properties' : 'Image Properties'}
-          </span>
-        </div>
-
-        <div className="properties-body">
+      <PanelContainer
+        title={isText ? 'Text Properties' : isShape ? 'Shape Properties' : 'Image Properties'}
+        isOpen={isOpen}
+        onClose={onClose}
+      >
           {/* Text Content */}
           {isText && (
             <div className="prop-section">
@@ -484,19 +500,13 @@ export default function RightPropertiesPanel({
               <span>Delete Object</span>
             </button>
           </div>
-        </div>
-      </aside>
-    );
-  }
+        </PanelContainer>
+      );
+    }
 
   // Default Empty State (No selection) -> Show page overview and quick actions
   return (
-    <aside className="properties-panel">
-      <div className="properties-header">
-        <span className="properties-title">Document & Page</span>
-      </div>
-
-      <div className="properties-body">
+    <PanelContainer title="Document & Page" isOpen={isOpen} onClose={onClose}>
         {activePageMeta && (
           <div className="prop-section">
             <span className="prop-section-title">Active Page</span>
@@ -581,7 +591,6 @@ export default function RightPropertiesPanel({
             Click any text, shape, image, or link on the page to view and edit its properties.
           </p>
         </div>
-      </div>
-    </aside>
-  );
-}
+      </PanelContainer>
+    );
+  }

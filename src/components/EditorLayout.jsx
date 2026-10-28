@@ -1,4 +1,5 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
+import { Layers, MousePointerClick, Type, Square, Sliders } from 'lucide-react';
 import TopToolbar from './TopToolbar';
 import LeftSidebar from './LeftSidebar';
 import PDFViewer from './PDFViewer';
@@ -30,6 +31,15 @@ export default function EditorLayout({
 }) {
   // Central zoom state
   const [zoom, setZoom] = useState(1.0);
+
+  // Responsive Drawer & Panels state
+  const [isLeftSidebarOpen, setIsLeftSidebarOpen] = useState(false);
+  const [isRightPanelOpen, setIsRightPanelOpen] = useState(
+    typeof window !== 'undefined' ? window.innerWidth >= 1024 : true
+  );
+  const [activeSidebarTab, setActiveSidebarTab] = useState('thumbnails');
+  const workspaceRef = useRef(null);
+  const initialFitRef = useRef(false);
 
   // Tools state
   const [isEditTextMode, setIsEditTextMode] = useState(false);
@@ -606,19 +616,47 @@ export default function EditorLayout({
   };
 
   // Zoom helpers: Fit Width & Fit Page
-  const handleFitWidth = () => {
+  const handleFitWidth = useCallback(() => {
     if (!activePageMeta) return;
-    const availableWidth = window.innerWidth - 300 - 280 - 64; // subtract sidebars and padding
-    const targetScale = Math.max(0.4, Math.min(2.5, availableWidth / activePageMeta.width));
-    setZoom(Math.round(targetScale * 100) / 100);
-  };
+    const container = workspaceRef.current;
+    const containerWidth = container ? container.clientWidth : window.innerWidth;
+    const padding = window.innerWidth < 640 ? 16 : 48;
+    const availableWidth = Math.max(100, containerWidth - padding);
+    const targetScale = Math.max(0.25, Math.min(3.0, availableWidth / activePageMeta.width));
+    setZoom(Math.floor(targetScale * 100) / 100);
+  }, [activePageMeta]);
 
-  const handleFitPage = () => {
+  const handleFitPage = useCallback(() => {
     if (!activePageMeta) return;
-    const availableHeight = window.innerHeight - 56 - 64; // subtract toolbar and padding
-    const targetScale = Math.max(0.4, Math.min(2.5, availableHeight / activePageMeta.height));
-    setZoom(Math.round(targetScale * 100) / 100);
-  };
+    const container = workspaceRef.current;
+    const containerHeight = container ? container.clientHeight : (window.innerHeight - 56);
+    const padding = window.innerWidth < 640 ? 24 : 64;
+    const availableHeight = Math.max(100, containerHeight - padding);
+    const targetScale = Math.max(0.25, Math.min(3.0, availableHeight / activePageMeta.height));
+    setZoom(Math.floor(targetScale * 100) / 100);
+  }, [activePageMeta]);
+
+  // Auto-fit on initial document load
+  useEffect(() => {
+    if (activePageMeta && !initialFitRef.current) {
+      initialFitRef.current = true;
+      const timer = setTimeout(() => {
+        handleFitWidth();
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [activePageMeta, handleFitWidth]);
+
+  // Responsive resize handler
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 1024) {
+        setIsRightPanelOpen(true);
+      }
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Safe Close Document
   const handleCloseDocumentRequest = () => {
@@ -678,7 +716,10 @@ export default function EditorLayout({
         onExport={() => setIsExportDialogOpen(true)}
         isExporting={isExporting}
         onOpenShortcuts={() => setIsShortcutsOpen(true)}
-        onOpenDocInfo={() => {}}
+        onOpenDocInfo={() => {
+          setActiveSidebarTab('info');
+          setIsLeftSidebarOpen(true);
+        }}
         onCloseDocument={handleCloseDocumentRequest}
         isEditTextMode={isEditTextMode}
         onToggleEditTextMode={() => {
@@ -686,6 +727,11 @@ export default function EditorLayout({
           setActiveDrawingTool('select');
         }}
         onAddTextBox={handleAddTextBox}
+        onToggleLeftSidebar={() => setIsLeftSidebarOpen((prev) => !prev)}
+        isLeftSidebarOpen={isLeftSidebarOpen}
+        onToggleRightPanel={() => setIsRightPanelOpen((prev) => !prev)}
+        isRightPanelOpen={isRightPanelOpen}
+        hasSelectedObject={Boolean(selectedObject || selectedLink || selectedTextItem)}
       />
 
       <div className="editor-main">
@@ -724,6 +770,7 @@ export default function EditorLayout({
             setSelectedLink(link);
             setSelectedObject(null);
             setSelectedTextItem(null);
+            if (window.innerWidth < 1024) setIsRightPanelOpen(true);
           }}
           onDeleteLink={handleDeleteLink}
           selectedLinkId={selectedLink?.id}
@@ -731,10 +778,16 @@ export default function EditorLayout({
           filename={filename}
           fileSize={fileSize}
           metadata={metadata}
+          // Responsive drawer props
+          isOpen={isLeftSidebarOpen}
+          onClose={() => setIsLeftSidebarOpen(false)}
+          activeTab={activeSidebarTab}
+          onTabChange={setActiveSidebarTab}
         />
 
         {/* Central Workspace / PDF Viewer */}
         <PDFViewer
+          ref={workspaceRef}
           pdfDocProxy={pdfDocProxy}
           pages={pages}
           activePageIndex={activePageIndex}
@@ -747,12 +800,16 @@ export default function EditorLayout({
             if (obj) {
               setSelectedLink(null);
               setSelectedTextItem(null);
+              if (window.innerWidth < 1024) setIsRightPanelOpen(true);
             }
           }}
           onSelectLink={(link) => {
             setSelectedLink(link);
-            setSelectedObject(null);
-            setSelectedTextItem(null);
+            if (link) {
+              setSelectedObject(null);
+              setSelectedTextItem(null);
+              if (window.innerWidth < 1024) setIsRightPanelOpen(true);
+            }
           }}
           selectedLinkId={selectedLink?.id}
           onOpenTextEditor={handleOpenTextEditor}
@@ -762,6 +819,7 @@ export default function EditorLayout({
             if (item) {
               setSelectedObject(null);
               setSelectedLink(null);
+              if (window.innerWidth < 1024) setIsRightPanelOpen(true);
             }
           }}
           onDeleteTextItem={handleDeleteTextItem}
@@ -786,8 +844,79 @@ export default function EditorLayout({
           onAddTextBox={handleAddTextBox}
           onAddShape={handleAddShape}
           onAddLink={handleAddNewLink}
+          isOpen={isRightPanelOpen}
+          onClose={() => setIsRightPanelOpen(false)}
         />
       </div>
+
+      {/* Mobile Bottom Navigation Bar (< 768px) */}
+      <nav className="mobile-bottom-bar" aria-label="Mobile Navigation">
+        <button
+          type="button"
+          className={`mobile-nav-btn ${isLeftSidebarOpen && activeSidebarTab === 'thumbnails' ? 'active' : ''}`}
+          onClick={() => {
+            setActiveSidebarTab('thumbnails');
+            setIsLeftSidebarOpen((prev) => (activeSidebarTab === 'thumbnails' && prev ? false : true));
+            setIsRightPanelOpen(false);
+          }}
+        >
+          <Layers size={18} />
+          <span>Pages</span>
+        </button>
+
+        <button
+          type="button"
+          className={`mobile-nav-btn ${isEditTextMode ? 'active' : ''}`}
+          onClick={() => {
+            setIsEditTextMode(!isEditTextMode);
+            setActiveDrawingTool('select');
+          }}
+        >
+          <MousePointerClick size={18} />
+          <span>Edit Text</span>
+        </button>
+
+        <button
+          type="button"
+          className={`mobile-nav-btn ${isLeftSidebarOpen && activeSidebarTab === 'text' ? 'active' : ''}`}
+          onClick={() => {
+            setActiveSidebarTab('text');
+            setIsLeftSidebarOpen((prev) => (activeSidebarTab === 'text' && prev ? false : true));
+            setIsRightPanelOpen(false);
+          }}
+        >
+          <Type size={18} />
+          <span>Insert</span>
+        </button>
+
+        <button
+          type="button"
+          className={`mobile-nav-btn ${isLeftSidebarOpen && (activeSidebarTab === 'shapes' || activeSidebarTab === 'images') ? 'active' : ''}`}
+          onClick={() => {
+            setActiveSidebarTab('shapes');
+            setIsLeftSidebarOpen((prev) => (activeSidebarTab === 'shapes' && prev ? false : true));
+            setIsRightPanelOpen(false);
+          }}
+        >
+          <Square size={18} />
+          <span>Tools</span>
+        </button>
+
+        <button
+          type="button"
+          className={`mobile-nav-btn ${isRightPanelOpen ? 'active' : ''}`}
+          onClick={() => {
+            setIsRightPanelOpen(!isRightPanelOpen);
+            if (!isRightPanelOpen) setIsLeftSidebarOpen(false);
+          }}
+        >
+          <Sliders size={18} />
+          <span>Properties</span>
+          {Boolean(selectedObject || selectedLink || selectedTextItem) && (
+            <span className="mobile-nav-badge" />
+          )}
+        </button>
+      </nav>
 
       {/* Existing Text Editor Modal */}
       <TextEditorModal

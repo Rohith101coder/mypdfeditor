@@ -350,6 +350,65 @@ async function runAllTests() {
     assert.strictEqual(threw, true, 'Must throw error when original bytes are empty');
   });
 
+  // --- 6. Responsive Layout & Viewport Tests ---
+  console.log('\n--- 6. Responsive Layout & Viewport Tests ---');
+
+  test('Dynamic zoom calculation properly scales standard PDF (612pt) for mobile screens (375px)', () => {
+    const pageWidth = 612;
+    const mobileContainerWidth = 375;
+    const padding = 16;
+    const availableWidth = mobileContainerWidth - padding;
+    const targetScale = Math.max(0.25, Math.min(3.0, availableWidth / pageWidth));
+    const floorZoom = Math.floor(targetScale * 100) / 100;
+
+    assert.ok(floorZoom < 1.0, 'Mobile zoom must scale down to fit');
+    assert.strictEqual(floorZoom, 0.58, 'Zoom for 375px container should be 0.58');
+    assert.ok(pageWidth * floorZoom <= availableWidth, 'Scaled page must fit within available width');
+  });
+
+  test('Dynamic zoom calculation handles tablet width (768px) and desktop width (1440px)', () => {
+    const pageWidth = 612;
+
+    // Tablet
+    const tabletContainerWidth = 768;
+    const tabletAvailable = tabletContainerWidth - 48;
+    const tabletScale = Math.round(Math.max(0.25, Math.min(3.0, tabletAvailable / pageWidth)) * 100) / 100;
+    assert.strictEqual(tabletScale, 1.18, 'Tablet scale should fit page comfortably');
+
+    // Desktop
+    const desktopContainerWidth = 1440;
+    const desktopAvailable = desktopContainerWidth - 48;
+    const desktopScale = Math.round(Math.max(0.25, Math.min(3.0, desktopAvailable / pageWidth)) * 100) / 100;
+    assert.ok(desktopScale > 1.0, 'Desktop scale allows comfortable viewing');
+  });
+
+  test('CSS stylesheets contain comprehensive responsive breakpoints and safe area support', async () => {
+    const fs = await import('node:fs');
+    const globalCss = fs.readFileSync('src/styles/global.css', 'utf-8');
+    const toolbarCss = fs.readFileSync('src/styles/toolbar.css', 'utf-8');
+    const sidebarCss = fs.readFileSync('src/styles/sidebar.css', 'utf-8');
+    const propertiesCss = fs.readFileSync('src/styles/properties.css', 'utf-8');
+    const editorCss = fs.readFileSync('src/styles/editor.css', 'utf-8');
+
+    // Safe area support
+    assert.ok(globalCss.includes('safe-area-inset-top'), 'global.css must declare safe-area insets');
+    assert.ok(globalCss.includes('100dvh'), 'global.css must support dynamic viewport height');
+
+    // Mobile & tablet breakpoints
+    assert.ok(toolbarCss.includes('@media (max-width: 1023px)'), 'toolbar.css must have tablet breakpoint');
+    assert.ok(toolbarCss.includes('@media (max-width: 767px)'), 'toolbar.css must have mobile breakpoint');
+    assert.ok(sidebarCss.includes('@media (max-width: 1023px)'), 'sidebar.css must have responsive drawer styles');
+    assert.ok(propertiesCss.includes('@media (max-width: 1023px)'), 'properties.css must have slide-over styles');
+    assert.ok(editorCss.includes('mobile-bottom-bar'), 'editor.css must include mobile bottom bar navigation styles');
+    assert.ok(editorCss.includes('modal-grid-2col'), 'editor.css must include responsive modal grid');
+  });
+
+  test('HTML index contains viewport-fit=cover for edge-to-edge mobile rendering', async () => {
+    const fs = await import('node:fs');
+    const indexHtml = fs.readFileSync('index.html', 'utf-8');
+    assert.ok(indexHtml.includes('viewport-fit=cover'), 'index.html must include viewport-fit=cover');
+  });
+
   // Final Summary
   console.log(`\n===========================================`);
   console.log(`🎉 TEST RESULTS: ${passed}/${total} TESTS PASSED!`);

@@ -79,7 +79,7 @@ export default function TextEditorModal({
             </div>
 
             {/* Typography Controls */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            <div className="modal-grid-2col">
               <div className="prop-section">
                 <span className="prop-section-title">Font Family</span>
                 <select
@@ -109,7 +109,7 @@ export default function TextEditorModal({
             </div>
 
             {/* Colors */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            <div className="modal-grid-2col">
               <div className="prop-section">
                 <span className="prop-section-title">Text Color</span>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
